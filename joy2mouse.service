@@ -1,0 +1,14 @@
+[Unit]
+Description=Joystick to Mouse Converter
+After=network.target
+
+[Service]
+ExecStart=/usr/bin/python3 /home/pi/joy_to_mouse.py
+WorkingDirectory=/home/pi
+Restart=always
+User=root
+Group=pi
+
+[Install]
+WantedBy=multi-user.target
+

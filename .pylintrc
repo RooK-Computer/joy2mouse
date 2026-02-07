@@ -1,0 +1,13 @@
+# pylint config
+[FORMAT]
+good-names=last_x,last_y
+[MESSAGES CONTROL]
+disable=fixme,
+        line-too-long,
+        missing-class-docstring,
+        missing-function-docstring,
+        missing-module-docstring,
+        too-many-arguments,
+        too-many-branches,
+        too-many-locals,
+        too-many-statements

@@ -1,0 +1,14 @@
+[Unit]
+Description=joy2mouse - Mouse Emulation using Gamepads
+After=network.target
+
+[Service]
+EnvironmentFile=$OS_ENV_DIR/joy2mouse
+ExecStart=/usr/bin/python3 /usr/local/bin/joy2mouse.py $CUSTOM_ARGS
+Restart=always
+User=root
+NoNewPrivileges=yes
+ProtectHome=true
+
+[Install]
+WantedBy=multi-user.target

@@ -1,0 +1,17 @@
+{
+    "input": "/dev/input/event17",
+    "rate": 60,
+    "sensitivity": 4000,
+    "deadzone": 5,
+    "invert_y": false,
+    "invert_x": false,
+    "key_mapping": {
+        "BTN_TL": "BTN_LEFT",
+        "BTN_TR": "BTN_RIGHT",
+        "BTN_START": "BTN_MIDDLE",
+        "BTN_SOUTH": "KEY_R",
+        "BTN_WEST": "KEY_O",
+        "BTN_EAST": "KEY_O",
+        "BTN_NORTH": "KEY_K"
+    }
+}

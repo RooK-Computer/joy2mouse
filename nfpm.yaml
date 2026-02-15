@@ -1,0 +1,31 @@
+---
+name: "rook-joy2mouse"
+arch: "arm64"
+platform: "linux"
+version: "${VERSION}"
+section: "base"
+priority: "optional"
+maintainer: "RooK Team"
+description: |
+  joy2mouse is a small tool we use for mouse emulation using gamepads.
+homepage: "https://github.com/RooK-Computer/joy2mouse"
+license: "GPL-2.0"
+
+scripts:
+  postinstall: ./contrib/postinstall.sh
+
+contents:
+  - src: contrib/joy2mouse.env
+    dst: /etc/default/joy2mouse
+    file_info:
+      mode: 0644
+
+  - src: contrib/rook-joy2mouse.service
+    dst: /usr/lib/systemd/system/rook-joy2mouse.service
+    file_info:
+      mode: 0644
+
+  - src: dist/joy2mouse
+    dst: /usr/local/bin/joy2mouse
+    file_info:
+      mode: 0755

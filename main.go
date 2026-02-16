@@ -53,9 +53,16 @@ func NewMouse(configuration *Config) (*Mouse, error) {
 	m := &Mouse{
 		Configuration: configuration,
 		InputDevice:   dev,
+		active:        false,
+		velocityX:     0,
+		velocityY:     0,
 	}
 
-	return m, err
+	if err != nil {
+		return m, fmt.Errorf("failed to create mouse emulation device: %w", err)
+	}
+
+	return m, nil
 }
 
 func (m *Mouse) handleEvent(inputEvent *evdev.InputEvent) {
@@ -64,13 +71,9 @@ func (m *Mouse) handleEvent(inputEvent *evdev.InputEvent) {
 		m.handleKeyEvent(inputEvent)
 	case evdev.EV_ABS:
 		switch inputEvent.Code {
-		case evdev.ABS_X:
+		case evdev.ABS_X, evdev.ABS_RX:
 			m.velocityX = inputEvent.Value
-		case evdev.ABS_Y:
-			m.velocityY = inputEvent.Value
-		case evdev.ABS_RX:
-			m.velocityX = inputEvent.Value
-		case evdev.ABS_RY:
+		case evdev.ABS_Y, evdev.ABS_RY:
 			m.velocityY = inputEvent.Value
 		}
 
@@ -103,8 +106,11 @@ func (m *Mouse) handleKeyEvent(inputEvent *evdev.InputEvent) {
 		return
 	}
 
+	evTime := syscall.NsecToTimeval(int64(time.Now().Nanosecond()))
+
 	//nolint: errcheck
 	m.InputDevice.WriteOne(&evdev.InputEvent{
+		Time:  evTime,
 		Type:  evdev.EV_KEY,
 		Code:  outputCode,
 		Value: inputEvent.Value,
@@ -112,6 +118,7 @@ func (m *Mouse) handleKeyEvent(inputEvent *evdev.InputEvent) {
 
 	//nolint: errcheck
 	m.InputDevice.WriteOne(&evdev.InputEvent{
+		Time:  evTime,
 		Type:  evdev.EV_SYN,
 		Code:  evdev.SYN_REPORT,
 		Value: 0,
@@ -135,9 +142,12 @@ func (m *Mouse) updateMovement() {
 		moveY *= -1
 	}
 
+	evTime := syscall.NsecToTimeval(int64(time.Now().Nanosecond()))
+
 	if moveX != 0 {
 		//nolint: errcheck
 		m.InputDevice.WriteOne(&evdev.InputEvent{
+			Time:  evTime,
 			Type:  evdev.EV_REL,
 			Code:  evdev.REL_X,
 			Value: moveX,
@@ -147,6 +157,7 @@ func (m *Mouse) updateMovement() {
 	if moveY != 0 {
 		//nolint: errcheck
 		m.InputDevice.WriteOne(&evdev.InputEvent{
+			Time:  evTime,
 			Type:  evdev.EV_REL,
 			Code:  evdev.REL_Y,
 			Value: moveY,
@@ -155,6 +166,7 @@ func (m *Mouse) updateMovement() {
 
 	//nolint: errcheck
 	m.InputDevice.WriteOne(&evdev.InputEvent{
+		Time:  evTime,
 		Type:  evdev.EV_SYN,
 		Code:  evdev.SYN_REPORT,
 		Value: 0,
@@ -165,7 +177,7 @@ func getDevices() (map[int]evdev.InputPath, error) {
 	devicePaths, err := evdev.ListDevicePaths()
 
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("failed to list devices: %w", err)
 	}
 
 	devices := make(map[int]evdev.InputPath, len(devicePaths))
@@ -309,7 +321,6 @@ func main() {
 		case ev := <-events:
 			// Handle the incoming event (e.g. clicks or movement changes)
 			mouse.handleEvent(&ev)
-
 		case <-ticker.C:
 			// Handle continuous mouse movement based on the rate
 			mouse.updateMovement()

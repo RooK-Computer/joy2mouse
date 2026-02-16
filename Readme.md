@@ -25,7 +25,7 @@ Example configuration:
     "input": "/dev/input/event17",
     "rate": 60,
     "sensitivity": 4000,
-    "deadzone": 5,
+    "deadzone": 100,
     "invert_y": false,
     "invert_x": false,
     "key_mapping": {

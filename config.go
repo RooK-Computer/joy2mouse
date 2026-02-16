@@ -11,7 +11,7 @@ import (
 type EvdevMap map[evdev.EvCode]evdev.EvCode
 
 func (m *EvdevMap) GetInputCodes() []evdev.EvCode {
-	var codes = make([]evdev.EvCode, len(*m))
+	var codes = make([]evdev.EvCode, 0, len(*m))
 
 	for in := range *m {
 		codes = append(codes, in)
@@ -21,7 +21,7 @@ func (m *EvdevMap) GetInputCodes() []evdev.EvCode {
 }
 
 func (m *EvdevMap) GetOutputCodes() []evdev.EvCode {
-	var codes = make([]evdev.EvCode, len(*m))
+	var codes = make([]evdev.EvCode, 0, len(*m))
 
 	for _, out := range *m {
 		codes = append(codes, out)
@@ -33,8 +33,11 @@ func (m *EvdevMap) GetOutputCodes() []evdev.EvCode {
 // UnmarshalJSON implements custom unmarshaling for IntMap
 func (m *EvdevMap) UnmarshalJSON(data []byte) error {
 	var stringMap map[string]string
-	if err := json.Unmarshal(data, &stringMap); err != nil {
-		return err
+
+	errUnmarsh := json.Unmarshal(data, &stringMap)
+
+	if errUnmarsh != nil {
+		return fmt.Errorf("failed to load key mapping: %w", errUnmarsh)
 	}
 
 	*m = make(map[evdev.EvCode]evdev.EvCode, len(stringMap))
@@ -62,7 +65,7 @@ type Config struct {
 	InputPath   string   `json:"input"`
 	Rate        int      `json:"rate"`
 	Deadzone    int32    `json:"deadzone"`
-	Sensitivity int32    `json:"Sensitivity"`
+	Sensitivity int32    `json:"sensitivity"`
 	InvertY     bool     `json:"invert_y"`
 	InvertX     bool     `json:"invert_x"`
 	KeyMapping  EvdevMap `json:"key_mapping"`
@@ -71,11 +74,16 @@ type Config struct {
 // DefaultConfig returns a Config with default values
 func defaultConfig() *Config {
 	return &Config{
+		InputPath:   "",
 		Rate:        60,
-		Deadzone:    5,
+		Deadzone:    1000,
 		Sensitivity: 4000,
 		InvertY:     false,
 		InvertX:     false,
+		KeyMapping: EvdevMap{
+			evdev.BTN_TL: evdev.BTN_LEFT,
+			evdev.BTN_TR: evdev.BTN_RIGHT,
+		},
 	}
 }
 
@@ -89,8 +97,10 @@ func LoadConfig(filename string) (*Config, error) {
 
 	config := defaultConfig()
 
-	if err := json.Unmarshal(data, config); err != nil {
-		return nil, fmt.Errorf("failed to parse config JSON: %w", err)
+	errUnmarsh := json.Unmarshal(data, config)
+
+	if errUnmarsh != nil {
+		return nil, fmt.Errorf("failed to parse config JSON: %w", errUnmarsh)
 	}
 
 	return config, nil

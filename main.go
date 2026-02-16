@@ -28,6 +28,9 @@ type Mouse struct {
 	velocityY     int32 // Current Y velocity
 }
 
+// NewMouse creates a new virtual device for the mouse emulation
+// We use this struct to pass configuration and to track velocity,
+// meaning, continuous movement when the controller isn't moving
 func NewMouse(configuration *Config) (*Mouse, error) {
 	outputs := configuration.KeyMapping.GetOutputCodes()
 
@@ -65,6 +68,9 @@ func NewMouse(configuration *Config) (*Mouse, error) {
 	return m, nil
 }
 
+// handleEvent takes in the newly received event and processes it
+// depending on the event type. Key events are handled directly
+// and movement events set or update the mouse velocity.
 func (m *Mouse) handleEvent(inputEvent *evdev.InputEvent) {
 	switch inputEvent.Type {
 	case evdev.EV_KEY:
@@ -77,6 +83,7 @@ func (m *Mouse) handleEvent(inputEvent *evdev.InputEvent) {
 			m.velocityY = inputEvent.Value
 		}
 
+		// We just set the velocity here and the Ticker takes care of the actual movement
 		if abs(m.velocityX) > m.Configuration.Deadzone || abs(m.velocityY) > m.Configuration.Deadzone {
 			m.active = true
 		} else {
@@ -87,6 +94,8 @@ func (m *Mouse) handleEvent(inputEvent *evdev.InputEvent) {
 	}
 }
 
+// handleKeyEvent uses the key mapping configuration to
+// write the configured output events
 func (m *Mouse) handleKeyEvent(inputEvent *evdev.InputEvent) {
 	outputCode, ok := m.Configuration.KeyMapping[inputEvent.Code]
 
@@ -125,6 +134,9 @@ func (m *Mouse) handleKeyEvent(inputEvent *evdev.InputEvent) {
 	})
 }
 
+// updateMovement uses the configured velocity to update the mouse position.
+// This method is used in the Ticket to continuously update even when the
+// controller isn't moved
 func (m *Mouse) updateMovement() {
 	if !m.active {
 		return
@@ -173,6 +185,7 @@ func (m *Mouse) updateMovement() {
 	})
 }
 
+// getDevices returns a list of available devices on the system
 func getDevices() (map[int]evdev.InputPath, error) {
 	devicePaths, err := evdev.ListDevicePaths()
 
@@ -189,6 +202,7 @@ func getDevices() (map[int]evdev.InputPath, error) {
 	return devices, nil
 }
 
+// printDevices lists the devices on stdout
 func printDevices(devices map[int]evdev.InputPath) {
 	keys := make([]int, 0, len(devices))
 
@@ -204,6 +218,8 @@ func printDevices(devices map[int]evdev.InputPath) {
 	}
 }
 
+// printDeviceSelection lists the devices on stdout and gives a
+// selection input
 func printDeviceSelection(devices map[int]evdev.InputPath) (string, error) {
 	reader := bufio.NewReader(os.Stdin)
 
@@ -231,6 +247,7 @@ func printDeviceSelection(devices map[int]evdev.InputPath) (string, error) {
 	return dev.Path, nil
 }
 
+// main handles the CLI flags and then starts the event processing loop
 func main() {
 	var (
 		cliConfigPath  string

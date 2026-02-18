@@ -257,7 +257,7 @@ func main() {
 	)
 
 	flag.StringVar(&cliConfigPath, "config", "./config.json", "Path to the configuration file")
-	flag.BoolVar(&cliListDevices, "list-devices", false, "List available devices and exit")
+	flag.BoolVar(&cliListDevices, "list", false, "List available devices and exit")
 
 	flag.Parse()
 

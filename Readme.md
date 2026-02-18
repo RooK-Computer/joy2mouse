@@ -2,13 +2,13 @@
 
 This tool emulates a mouse by converting gamepad events.
 
-Note, it is only tested with usb connected 8bitdo gamepads, that don't require any configuration keypresses.
+Note, it is only tested with USB connected 8BitDo gamepads, that don't require any configuration keypresses.
 
 ## Usage
 
 ```bash
 # Show available devices
-joy2mouse -list-devices
+joy2mouse -list
 ```
 
 ```bash

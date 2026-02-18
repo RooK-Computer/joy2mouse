@@ -20,6 +20,12 @@ const (
 	unknownKey = "UNKNOWN"
 )
 
+// nolint: gochecknoglobals
+var (
+	// These get filled at build time with the proper vaules
+	version = "development"
+)
+
 // Mouse holds the configuration for the emulated mouse
 // and handles translation of input events
 type Mouse struct {
@@ -223,6 +229,10 @@ func printDevices(devices map[int]evdev.InputPath) {
 // printDeviceSelection lists the devices on stdout and gives a
 // selection input
 func printDeviceSelection(devices map[int]evdev.InputPath) (string, error) {
+	if len(devices) < 1 {
+		return "", errors.New("no devices available")
+	}
+
 	reader := bufio.NewReader(os.Stdin)
 
 	fmt.Printf("Available devices:\n")
@@ -254,12 +264,19 @@ func main() {
 	var (
 		cliConfigPath  string
 		cliListDevices bool
+		cliVersion     bool
 	)
 
 	flag.StringVar(&cliConfigPath, "config", "./config.json", "Path to the configuration file")
 	flag.BoolVar(&cliListDevices, "list", false, "List available devices and exit")
+	flag.BoolVar(&cliVersion, "version", false, "Print joy2mouse version")
 
 	flag.Parse()
+
+	if cliVersion {
+		fmt.Printf("joy2mouse version: %s\n", version)
+		os.Exit(0)
+	}
 
 	devices, errDevs := getDevices()
 
@@ -284,7 +301,7 @@ func main() {
 		path, errSelect := printDeviceSelection(devices)
 
 		if errSelect != nil {
-			fmt.Fprintf(os.Stderr, "Error: invalid selection. %v\n", errSelect)
+			fmt.Fprintf(os.Stderr, "Error: could not select device. %v\n", errSelect)
 			os.Exit(1)
 		}
 

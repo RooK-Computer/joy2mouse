@@ -10,6 +10,7 @@ import (
 
 type EvdevMap map[evdev.EvCode]evdev.EvCode
 
+// GetInputCodes returns the available intput codes
 func (m *EvdevMap) GetInputCodes() []evdev.EvCode {
 	var codes = make([]evdev.EvCode, 0, len(*m))
 
@@ -20,6 +21,7 @@ func (m *EvdevMap) GetInputCodes() []evdev.EvCode {
 	return codes
 }
 
+// GetOutputCodes returns the available output codes
 func (m *EvdevMap) GetOutputCodes() []evdev.EvCode {
 	var codes = make([]evdev.EvCode, 0, len(*m))
 
@@ -46,13 +48,15 @@ func (m *EvdevMap) UnmarshalJSON(data []byte) error {
 		inputCode, okInput := evdev.KEYFromString[inputKey]
 
 		if !okInput {
-			fmt.Printf("Warning: Unknown input key %s\n", outputKey)
+			fmt.Printf("Warning: unknown input key %s\n", inputKey)
+			continue
 		}
 
 		outputCode, okOutput := evdev.KEYFromString[outputKey]
 
 		if !okOutput {
-			fmt.Printf("Warning: Unknown output key %s\n", outputKey)
+			fmt.Printf("Warning: unknown output key %s\n", outputKey)
+			continue
 		}
 
 		(*m)[inputCode] = outputCode
@@ -89,10 +93,10 @@ func defaultConfig() *Config {
 
 // LoadConfig reads and parses the JSON config file
 func LoadConfig(filename string) (*Config, error) {
-	data, err := os.ReadFile(filename)
+	data, errRead := os.ReadFile(filename)
 
-	if err != nil {
-		return nil, fmt.Errorf("failed to read config file: %w", err)
+	if errRead != nil {
+		return nil, fmt.Errorf("failed to read configuration file '%s': %w", filename, errRead)
 	}
 
 	config := defaultConfig()
@@ -100,7 +104,7 @@ func LoadConfig(filename string) (*Config, error) {
 	errUnmarsh := json.Unmarshal(data, config)
 
 	if errUnmarsh != nil {
-		return nil, fmt.Errorf("failed to parse config JSON: %w", errUnmarsh)
+		return nil, fmt.Errorf("failed to parse JSON configuration: %w", errUnmarsh)
 	}
 
 	return config, nil

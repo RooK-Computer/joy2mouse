@@ -20,6 +20,8 @@ const (
 	unknownKey = "UNKNOWN"
 )
 
+// Mouse holds the configuration for the emulated mouse
+// and handles translation of input events
 type Mouse struct {
 	InputDevice   *evdev.InputDevice
 	Configuration *Config
@@ -62,7 +64,7 @@ func NewMouse(configuration *Config) (*Mouse, error) {
 	}
 
 	if err != nil {
-		return m, fmt.Errorf("failed to create mouse emulation device: %w", err)
+		return m, fmt.Errorf("failed to create device for mouse emulation: %w", err)
 	}
 
 	return m, nil
@@ -111,7 +113,7 @@ func (m *Mouse) handleKeyEvent(inputEvent *evdev.InputEvent) {
 			keyName = unknownKey
 		}
 
-		fmt.Printf("Info: Key '%d' (%s) not configured\n", inputEvent.Code, keyName)
+		fmt.Printf("Info: input '%d' (%s) not configured\n", inputEvent.Code, keyName)
 		return
 	}
 
@@ -227,7 +229,7 @@ func printDeviceSelection(devices map[int]evdev.InputPath) (string, error) {
 
 	printDevices(devices)
 
-	fmt.Printf("Select the device event number [0-%d]:\n", len(devices)-1)
+	fmt.Printf("Select the device number [0-%d]:\n", len(devices)-1)
 
 	input, _ := reader.ReadString('\n')
 	input = strings.TrimSpace(input)
@@ -262,7 +264,7 @@ func main() {
 	devices, errDevs := getDevices()
 
 	if errDevs != nil {
-		fmt.Fprintf(os.Stderr, "Error: Could not get devices. %v", errDevs)
+		fmt.Fprintf(os.Stderr, "Error: could not get devices. %v", errDevs)
 		os.Exit(1)
 	}
 
@@ -274,7 +276,7 @@ func main() {
 	config, errConfig := LoadConfig(cliConfigPath)
 
 	if errConfig != nil {
-		fmt.Fprintf(os.Stderr, "Error: Could not read configuration. %v", errConfig)
+		fmt.Fprintf(os.Stderr, "Error: could not read configuration. %v", errConfig)
 		os.Exit(1)
 	}
 
@@ -282,7 +284,7 @@ func main() {
 		path, errSelect := printDeviceSelection(devices)
 
 		if errSelect != nil {
-			fmt.Fprintf(os.Stderr, "Error: Invalid selection %v\n", errSelect)
+			fmt.Fprintf(os.Stderr, "Error: invalid selection. %v\n", errSelect)
 			os.Exit(1)
 		}
 
@@ -292,14 +294,14 @@ func main() {
 	inputDevice, err := evdev.Open(config.InputPath)
 
 	if err != nil {
-		fmt.Fprintf(os.Stderr, "Error: cannot read %s: %v\n", os.Args[1], err)
+		fmt.Fprintf(os.Stderr, "Error: cannot read %s. %v\n", config.InputPath, err)
 		os.Exit(1)
 	}
 
 	mouse, err := NewMouse(config)
 
 	if err != nil {
-		fmt.Fprintf(os.Stderr, "Error: Failed to create virtual mouse: %v\n", err)
+		fmt.Fprintf(os.Stderr, "Error: failed to create virtual mouse. %v\n", err)
 		os.Exit(1)
 	}
 
@@ -317,7 +319,7 @@ func main() {
 		for {
 			ev, err := inputDevice.ReadOne()
 			if err != nil {
-				fmt.Fprintf(os.Stderr, "Error: Could not read event: %v\n", err)
+				fmt.Fprintf(os.Stderr, "Error: could not read event. %v\n", err)
 				return
 			}
 			events <- *ev
@@ -333,7 +335,7 @@ func main() {
 	for {
 		select {
 		case <-sigChan:
-			fmt.Printf("\nShutting down...\n")
+			fmt.Printf("\nShutting down.\n")
 			return
 		case ev := <-events:
 			// Handle the incoming event (e.g. clicks or movement changes)

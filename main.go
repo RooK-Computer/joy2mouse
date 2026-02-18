@@ -117,7 +117,7 @@ func (m *Mouse) handleKeyEvent(inputEvent *evdev.InputEvent) {
 		return
 	}
 
-	evTime := syscall.NsecToTimeval(int64(time.Now().Nanosecond()))
+	evTime := currentTime()
 
 	//nolint: errcheck
 	m.InputDevice.WriteOne(&evdev.InputEvent{
@@ -156,7 +156,7 @@ func (m *Mouse) updateMovement() {
 		moveY *= -1
 	}
 
-	evTime := syscall.NsecToTimeval(int64(time.Now().Nanosecond()))
+	evTime := currentTime()
 
 	if moveX != 0 {
 		//nolint: errcheck
@@ -354,4 +354,8 @@ func abs(x int32) int32 {
 		return -x
 	}
 	return x
+}
+
+func currentTime() syscall.Timeval {
+	return syscall.NsecToTimeval(int64(time.Now().Nanosecond()))
 }

@@ -5,6 +5,7 @@ linters:
   default: all
   disable:
     - wsl_v5
+    - exhaustruct
     - tagliatelle
     - forbidigo
     - wsl

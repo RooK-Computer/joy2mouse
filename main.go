@@ -5,6 +5,7 @@ import (
 	"errors"
 	"flag"
 	"fmt"
+	"log/slog"
 	"os"
 	"os/signal"
 	"sort"
@@ -31,6 +32,7 @@ var (
 type Mouse struct {
 	InputDevice   *evdev.InputDevice
 	Configuration *Config
+	Logger        *slog.Logger
 	active        bool  // Track whether continuous movement is active
 	velocityX     int32 // Current X velocity
 	velocityY     int32 // Current Y velocity
@@ -39,7 +41,7 @@ type Mouse struct {
 // NewMouse creates a new virtual device for the mouse emulation
 // We use this struct to pass configuration and to track velocity,
 // meaning, continuous movement when the controller isn't moving
-func NewMouse(configuration *Config) (*Mouse, error) {
+func NewMouse(configuration *Config, logger *slog.Logger) (*Mouse, error) {
 	outputs := configuration.KeyMapping.GetOutputCodes()
 
 	dev, err := evdev.CreateDevice(
@@ -64,6 +66,7 @@ func NewMouse(configuration *Config) (*Mouse, error) {
 	m := &Mouse{
 		Configuration: configuration,
 		InputDevice:   dev,
+		Logger:        logger,
 		active:        false,
 		velocityX:     0,
 		velocityY:     0,
@@ -80,6 +83,8 @@ func NewMouse(configuration *Config) (*Mouse, error) {
 // depending on the event type. Key events are handled directly
 // and movement events set or update the mouse velocity.
 func (m *Mouse) handleEvent(inputEvent *evdev.InputEvent) {
+	m.Logger.Debug("Received event", "code", inputEvent.Code, "type", inputEvent.Type, "value", inputEvent.Value)
+
 	switch inputEvent.Type {
 	case evdev.EV_KEY:
 		m.handleKeyEvent(inputEvent)
@@ -119,7 +124,7 @@ func (m *Mouse) handleKeyEvent(inputEvent *evdev.InputEvent) {
 			keyName = unknownKey
 		}
 
-		fmt.Printf("Info: input '%d' (%s) not configured\n", inputEvent.Code, keyName)
+		m.Logger.Info("Key not configured", "code", inputEvent.Code, "name", keyName)
 		return
 	}
 
@@ -265,10 +270,12 @@ func main() {
 		cliConfigPath  string
 		cliListDevices bool
 		cliVersion     bool
+		cliDebugLog    bool
 	)
 
 	flag.StringVar(&cliConfigPath, "config", "./config.json", "Path to the configuration file")
 	flag.BoolVar(&cliListDevices, "list", false, "List available devices and exit")
+	flag.BoolVar(&cliDebugLog, "debug", false, "Enable debug logging")
 	flag.BoolVar(&cliVersion, "version", false, "Print joy2mouse version")
 
 	flag.Parse()
@@ -276,6 +283,12 @@ func main() {
 	if cliVersion {
 		fmt.Printf("joy2mouse version: %s\n", version)
 		os.Exit(0)
+	}
+
+	logLevel := slog.LevelInfo
+
+	if cliDebugLog {
+		logLevel = slog.LevelDebug
 	}
 
 	devices, errDevs := getDevices()
@@ -315,7 +328,11 @@ func main() {
 		os.Exit(1)
 	}
 
-	mouse, err := NewMouse(config)
+	logger := slog.New(slog.NewTextHandler(os.Stdout, &slog.HandlerOptions{
+		Level: logLevel,
+	}))
+
+	mouse, err := NewMouse(config, logger)
 
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "Error: failed to create virtual mouse. %v\n", err)
